@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monix Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard">
+        <nav class="navbar">
+            <div class="header-title">
+                <h1>Monix Dashboard</h1>
+                <p>Real-time monitoring</p>
+            </div>
+            <div class="header-actions">
+                <button id="theme-toggle">
+                    <i class="fas fa-moon"></i>
+                    <span>Dark Mode</span>
+                </button>
+                <button id="data-toggle" class="pulse-button">
+                    <i class="fas fa-pause"></i>
+                    <span>Pause Updates</span>
+                </button>
+                <span class="date-time" id="current-time">--:--:--</span>
+            </div>
+        </nav>
+        
+        <div class="main-content">
+            <div class="metrics-overview">
+                <div class="metric-card">
+                    <div class="metric-icon cpu-icon">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                    <div class="metric-data">
+                        <h3>CPU Usage</h3>
+                        <p class="metric-value"><span id="cpu-usage">--</span>%</p>
+                        <div class="metric-details">
+                            <p><i class="fas fa-tachometer-alt"></i> <span id="cpu-freq">--</span></p>
+                            <p><i class="fas fa-cube"></i> <span id="cpu-cores">--</span> Cores</p>
+                            <p><i class="fas fa-sitemap"></i> <span id="cpu-threads">--</span> Threads</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon ram-icon">
+                        <i class="fas fa-memory"></i>
+                    </div>
+                    <div class="metric-data">
+                        <h3>RAM Usage</h3>
+                        <p class="metric-value"><span id="ram-usage">--</span>%</p>
+                        <div class="metric-details">
+                            <p><i class="fas fa-database"></i> Total: <span id="ram-total">--</span></p>
+                            <p><i class="fas fa-chart-pie"></i> Used: <span id="ram-used">--</span></p>
+                            <p><i class="fas fa-check-circle"></i> Free: <span id="ram-free">--</span></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon disk-icon">
+                        <i class="fas fa-hdd"></i>
+                    </div>
+                    <div class="metric-data">
+                        <h3>Disk Usage</h3>
+                        <p class="metric-value"><span id="disk-usage">--</span>%</p>
+                        <div class="metric-details">
+                            <p><i class="fas fa-database"></i> Total: <span id="disk-total">--</span></p>
+                            <p><i class="fas fa-chart-pie"></i> Used: <span id="disk-used">--</span></p>
+                            <p><i class="fas fa-check-circle"></i> Free: <span id="disk-free">--</span></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="metric-card">
+                    <div class="metric-icon uptime-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="metric-data">
+                        <h3>System Uptime</h3>
+                        <p class="metric-value" id="uptime-formatted">--</p>
+                        <div class="metric-details">
+                            <p><i class="fas fa-calendar-day"></i> <span id="uptime-days">--</span> Days</p>
+                            <p><i class="fas fa-clock"></i> <span id="uptime-hours">--</span> Hours</p>
+                            <p><i class="fas fa-stopwatch"></i> <span id="uptime-minutes">--</span> Minutes</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>CPU Performance</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="cpuChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Network Activity</h3>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="networkChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="system-details">
+                <div class="detail-card">
+                    <h3>Network Details</h3>
+                    <div class="detail-item">
+                        <span class="detail-label">Upload Speed:</span>
+                        <span class="detail-value" id="upload-speed">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Download Speed:</span>
+                        <span class="detail-value" id="download-speed">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Total Upload:</span>
+                        <span class="detail-value" id="total-upload">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Total Download:</span>
+                        <span class="detail-value" id="total-download">--</span>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3>Connections</h3>
+                    <div class="detail-item">
+                        <span class="detail-label">TCP Connections:</span>
+                        <span class="detail-value" id="tcp-count">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">UDP Connections:</span>
+                        <span class="detail-value" id="udp-count">--</span>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3>Disk I/O</h3>
+                    <div class="detail-item">
+                        <span class="detail-label">Read IOPS:</span>
+                        <span class="detail-value" id="read-iops">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Write IOPS:</span>
+                        <span class="detail-value" id="write-iops">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Total IOPS:</span>
+                        <span class="detail-value" id="total-iops">--</span>
+                    </div>
+                </div>
+
+                <div class="detail-card">
+                    <h3>IP Configuration</h3>
+                    <div class="detail-item">
+                        <span class="detail-label">Hostname:</span>
+                        <span class="detail-value" id="hostname">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">IPv4:</span>
+                        <span class="detail-value" id="ipv4">--</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">IPv6:</span>
+                        <span class="detail-value" id="ipv6">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="top-processes-section">
+                <div class="section-header">
+                    <h2>Top Single Processes</h2>
+                    <div class="sort-controls">
+                        <span>Sort by:</span>
+                        <select id="sort-processes">
+                            <option value="cpu" selected>CPU Usage</option>
+                            <option value="ram">RAM Usage</option>
+                            <option value="network">Network Usage</option>
+                            <option value="iops">Disk IOPS</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="processes-table-container">
+                    <table class="processes-table">
+                        <thead>
+                            <tr>
+                                <th>Process Name</th>
+                                <th>PID</th>
+                                <th>CPU %</th>
+                                <th>RAM</th>
+                                <th>Network</th>
+                                <th>IOPS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="processes-list">
+                            <!-- Processes will be added here dynamically -->
+                            <tr>
+                                <td colspan="6" class="empty-message">Loading processes...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="chart.js"></script>
+</body>
+</html>
