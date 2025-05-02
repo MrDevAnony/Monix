@@ -1,7 +1,8 @@
 document.addEventListener("DOMContentLoaded", function () {
     // Data fetching state
     let isDataFetchingActive = true;
-    let dataFetchInterval = null;
+    let dataFetchInterval = null; // Single interval for all data
+    let refreshRate = 5000; // Default 5 second refresh rate
     
     // Theme toggle functionality
     const themeToggle = document.getElementById("theme-toggle");
@@ -45,8 +46,8 @@ document.addEventListener("DOMContentLoaded", function () {
             dataToggle.classList.remove("paused");
             
             // Fetch immediately and then set interval
-            fetchData();
-            dataFetchInterval = setInterval(fetchData, 3000);
+            fetchAllData();
+            dataFetchInterval = setInterval(fetchAllData, refreshRate);
         } else {
             // Pause data fetching
             dataIcon.classList.remove("fa-pause");
@@ -59,6 +60,156 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // Custom dropdown for refresh rate
+    const refreshSelector = document.getElementById("refresh-selector");
+    const refreshSelectedValue = refreshSelector.querySelector(".selected-value");
+    const refreshDropdown = refreshSelector.querySelector(".custom-dropdown");
+    const refreshItems = refreshSelector.querySelectorAll(".dropdown-item");
+    const refreshIcon = refreshSelector.querySelector(".fa-sync-alt");
+    
+    // Toggle refresh dropdown
+    refreshSelector.addEventListener("click", function(e) {
+        e.stopPropagation();
+        refreshSelector.classList.toggle("active");
+        refreshDropdown.classList.toggle("active");
+        
+        // Close other dropdowns
+        sortSelector.classList.remove("active");
+        sortDropdown.classList.remove("active");
+    });
+    
+    // Handle refresh rate selection
+    refreshItems.forEach(item => {
+        // Mark the default selected item (5s)
+        if (item.getAttribute("data-value") === "5") {
+            item.classList.add("active");
+        }
+        
+        item.addEventListener("click", function(e) {
+            e.stopPropagation();
+            
+            // Add ripple effect
+            const ripple = document.createElement("span");
+            ripple.classList.add("ripple");
+            const rect = item.getBoundingClientRect();
+            ripple.style.left = `${e.clientX - rect.left}px`;
+            ripple.style.top = `${e.clientY - rect.top}px`;
+            item.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+            
+            // Get the selected refresh rate in seconds
+            const selectedRate = parseInt(this.getAttribute("data-value"));
+            
+            // Update selected value display
+            refreshSelectedValue.textContent = this.textContent;
+            
+            // Update active state
+            refreshItems.forEach(i => i.classList.remove("active"));
+            this.classList.add("active");
+            
+            // Convert to milliseconds
+            refreshRate = selectedRate * 1000;
+            
+            // If data fetching is active, restart the interval with the new rate
+            if (isDataFetchingActive) {
+                clearInterval(dataFetchInterval);
+                dataFetchInterval = setInterval(fetchAllData, refreshRate);
+                
+                // Add rotating animation to refresh icon
+                refreshIcon.classList.add("rotating");
+                
+                // Remove the class after animation completes
+                setTimeout(() => {
+                    refreshIcon.classList.remove("rotating");
+                }, 1000);
+                
+                // Create a tooltip to show the new refresh rate
+                const tooltip = document.createElement('div');
+                tooltip.className = 'refresh-tooltip';
+                tooltip.textContent = `Refresh rate: ${selectedRate}s`;
+                document.body.appendChild(tooltip);
+                
+                // Show tooltip for 2 seconds
+                setTimeout(() => {
+                    tooltip.remove();
+                }, 2000);
+            }
+            
+            // Close the dropdown
+            refreshSelector.classList.remove("active");
+            refreshDropdown.classList.remove("active");
+        });
+    });
+    
+    // Custom dropdown for sort control
+    const sortSelector = document.getElementById("sort-selector");
+    const sortSelectedValue = sortSelector.querySelector(".selected-value");
+    const sortDropdown = sortSelector.querySelector(".custom-dropdown");
+    const sortItems = sortSelector.querySelectorAll(".dropdown-item");
+    
+    // Toggle sort dropdown
+    sortSelector.addEventListener("click", function(e) {
+        e.stopPropagation();
+        sortSelector.classList.toggle("active");
+        sortDropdown.classList.toggle("active");
+        
+        // Close other dropdowns
+        refreshSelector.classList.remove("active");
+        refreshDropdown.classList.remove("active");
+    });
+    
+    // Handle sort selection
+    sortItems.forEach(item => {
+        // Mark the default selected item (CPU)
+        if (item.getAttribute("data-value") === "cpu") {
+            item.classList.add("active");
+        }
+        
+        item.addEventListener("click", function(e) {
+            e.stopPropagation();
+            
+            // Add ripple effect
+            const ripple = document.createElement("span");
+            ripple.classList.add("ripple");
+            const rect = item.getBoundingClientRect();
+            ripple.style.left = `${e.clientX - rect.left}px`;
+            ripple.style.top = `${e.clientY - rect.top}px`;
+            item.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+            
+            // Get the selected sort value
+            const sortValue = this.getAttribute("data-value");
+            
+            // Update selected value display
+            sortSelectedValue.textContent = this.textContent;
+            
+            // Update active state
+            sortItems.forEach(i => i.classList.remove("active"));
+            this.classList.add("active");
+            
+            // Sort the processes
+            sortProcesses(sortValue);
+            
+            // Close the dropdown
+            sortSelector.classList.remove("active");
+            sortDropdown.classList.remove("active");
+        });
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener("click", function() {
+        refreshSelector.classList.remove("active");
+        refreshDropdown.classList.remove("active");
+        sortSelector.classList.remove("active");
+        sortDropdown.classList.remove("active");
+    });
+
     // Store historical data for charts
     const historyData = {
         cpu: [],
@@ -68,51 +219,12 @@ document.addEventListener("DOMContentLoaded", function () {
         perCpuData: []
     };
 
-    // Sample data for processes (will be replaced with actual API data)
-    let processes = [];
+    // Cache for data
+    const dataCache = {
+        processes: [],
+        lastProcessUpdate: 0
+    };
 
-    // Format CPU frequency to GHz if needed with 3 decimal places
-    function formatCpuFreq(freq) {
-        if (!freq) return "N/A";
-        
-        // If it's already in MHz format
-        if (typeof freq === 'string' && freq.includes("MHz")) {
-            const mhzValue = parseFloat(freq);
-            if (isNaN(mhzValue)) return freq;
-            
-            // Convert to GHz if over 1000 MHz
-            if (mhzValue >= 1000) {
-                return (mhzValue / 1000).toFixed(3) + " GHz";
-            }
-            
-            return mhzValue.toFixed(3) + " MHz";
-        }
-        
-        // If it's a numeric value (not already formatted), convert directly
-        if (!isNaN(parseFloat(freq))) {
-            const freqValue = parseFloat(freq);
-            if (freqValue >= 1000) {
-                return (freqValue / 1000).toFixed(3) + " GHz";
-            }
-            return freqValue.toFixed(3) + " MHz";
-        }
-        
-        return freq;
-    }
-
-    // Format size with 3 decimal places
-    function formatSize(size, unit) {
-        if (typeof size !== 'number') {
-            // Try to parse it as a number if it's a string
-            const parsedSize = parseFloat(size);
-            if (!isNaN(parsedSize)) {
-                return parsedSize.toFixed(3) + " " + unit;
-            }
-            return size;
-        }
-        return size.toFixed(3) + " " + unit;
-    }
-    
     // Get the base URL from the current window location instead of hardcoding
     function getApiBaseUrl() {
         const currentLocation = window.location;
@@ -127,9 +239,67 @@ document.addEventListener("DOMContentLoaded", function () {
         return `${protocol}//${host}:${port}/api`;
     }
 
-    async function fetchData() {
+    // --- UX/Accessibility/Loading/Error Enhancements ---
+    const statusBar = document.getElementById("global-status-bar");
+    let isOffline = false;
+
+    function showStatusBar(message, type = "error", timeout = 0) {
+        statusBar.textContent = message;
+        statusBar.className = `status-bar ${type}`;
+        statusBar.style.display = "block";
+        if (timeout > 0) {
+            setTimeout(() => {
+                statusBar.style.display = "none";
+            }, timeout);
+        }
+    }
+    function hideStatusBar() {
+        statusBar.style.display = "none";
+    }
+
+    // Accessibility: keyboard navigation for dropdowns
+    document.querySelectorAll('.custom-dropdown').forEach(dropdown => {
+        dropdown.setAttribute('tabindex', '0');
+        dropdown.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                this.classList.remove('active');
+            }
+        });
+    });
+
+    // Handle offline/online events
+    window.addEventListener('offline', () => {
+        isOffline = true;
+        showStatusBar('You are offline. Trying to reconnect...', 'offline');
+    });
+    window.addEventListener('online', () => {
+        isOffline = false;
+        showStatusBar('Back online! Reconnecting...', 'success', 2000);
+        fetchAllData();
+    });
+
+    // Clean up intervals and listeners on page unload
+    window.addEventListener('beforeunload', () => {
+        if (dataFetchInterval) clearInterval(dataFetchInterval);
+    });
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && dataFetchInterval) {
+            clearInterval(dataFetchInterval);
+        } else if (!document.hidden && isDataFetchingActive) {
+            fetchAllData();
+            dataFetchInterval = setInterval(fetchAllData, refreshRate);
+        }
+    });
+
+    // --- END ENHANCEMENTS ---
+
+    // Combined function to fetch all data in a single interval
+    async function fetchAllData() {
+        if (isOffline) {
+            showStatusBar('You are offline. Waiting for connection...', 'offline');
+            return;
+        }
         try {
-            // Get the dynamic API base URL based on the current window location
             const baseUrl = getApiBaseUrl();
             
             // Fetch all data in parallel
@@ -142,7 +312,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 fetch(`${baseUrl}/connections`).then(res => res.json()),
                 fetch(`${baseUrl}/uptime`).then(res => res.json()),
                 fetch(`${baseUrl}/iops`).then(res => res.json()).catch(() => ({ read_iops: 0, write_iops: 0, total_iops: 0 })),
-                fetch(`${baseUrl}/processes`).then(res => res.json()).catch(() => ({ processes: [] }))
+                fetch(`${baseUrl}/processes?limit=3`).then(res => res.json()).catch(() => ({ processes: [] }))
             ]);
 
             // Update CPU data
@@ -235,10 +405,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 document.getElementById("udp-count").textContent = udpConnections || "0";
             }
             
-            // Update IOPS data
-            document.getElementById("read-iops").textContent = iopsData.read_iops || 0;
-            document.getElementById("write-iops").textContent = iopsData.write_iops || 0;
-            document.getElementById("total-iops").textContent = iopsData.total_iops || 0;
+            // Update IOPS data to show as bytes per second in appropriate units
+            const readIops = formatByteRate(iopsData.read_iops || 0);
+            const writeIops = formatByteRate(iopsData.write_iops || 0);
+            const totalIops = formatByteRate(iopsData.total_iops || 0);
+            
+            document.getElementById("read-iops").textContent = readIops;
+            document.getElementById("write-iops").textContent = writeIops;
+            document.getElementById("total-iops").textContent = totalIops;
             
             // Update IP data
             document.getElementById("hostname").textContent = ipData.hostname;
@@ -269,17 +443,34 @@ document.addEventListener("DOMContentLoaded", function () {
             
             // Update processes data if available
             if (processesData && processesData.processes) {
-                updateProcessesList(processesData.processes);
+                // Completely replace previous data with only the top 3 from API
+                dataCache.processes = []; // Clear previous data
+                dataCache.processes = processesData.processes.slice(0, 3); // Ensure only 3 processes max
+                updateProcessesList(dataCache.processes);
             } else {
-                // If no process data, use sample data for demonstration
-                updateProcessesList(getSampleProcesses());
+                // If no processes data and process list exists, show empty state
+                dataCache.processes = []; // Clear any cached data
+                const processesList = document.getElementById("processes-list");
+                if (processesList) {
+                    processesList.innerHTML = '<tr><td colspan="6" class="empty-message">No processes data available</td></tr>';
+                }
             }
             
             // Update charts with new data
             updateCharts();
-
+            hideStatusBar();
         } catch (error) {
+            showStatusBar('Error fetching data from server. Please check your connection.', 'error');
             console.error("Error fetching data:", error);
+            
+            // Clear any cached data on error
+            dataCache.processes = [];
+            
+            // Show error in processes list if it exists
+            const processesList = document.getElementById("processes-list");
+            if (processesList) {
+                processesList.innerHTML = '<tr><td colspan="6" class="empty-message">Error fetching process data</td></tr>';
+            }
         }
     }
     
@@ -295,10 +486,54 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // Format CPU frequency to GHz if needed with 3 decimal places
+    function formatCpuFreq(freq) {
+        if (!freq) return "N/A";
+        
+        // If it's already in MHz format
+        if (typeof freq === 'string' && freq.includes("MHz")) {
+            const mhzValue = parseFloat(freq);
+            if (isNaN(mhzValue)) return freq;
+            
+            // Convert to GHz if over 1000 MHz
+            if (mhzValue >= 1000) {
+                return (mhzValue / 1000).toFixed(3) + " GHz";
+            }
+            
+            return mhzValue.toFixed(3) + " MHz";
+        }
+        
+        // If it's a numeric value (not already formatted), convert directly
+        if (!isNaN(parseFloat(freq))) {
+            const freqValue = parseFloat(freq);
+            if (freqValue >= 1000) {
+                return (freqValue / 1000).toFixed(3) + " GHz";
+            }
+            return freqValue.toFixed(3) + " MHz";
+        }
+        
+        return freq;
+    }
+
+    // Format size with 3 decimal places
+    function formatSize(size, unit) {
+        if (typeof size !== 'number') {
+            // Try to parse it as a number if it's a string
+            const parsedSize = parseFloat(size);
+            if (!isNaN(parsedSize)) {
+                return parsedSize.toFixed(3) + " " + unit;
+            }
+            return size;
+        }
+        return size.toFixed(3) + " " + unit;
+    }
+
     // Function to update the processes list
     function updateProcessesList(processList) {
-        processes = processList;
-        const currentSortBy = document.getElementById("sort-processes").value;
+        dataCache.processes = processList;
+        // Get the current sort option from the active dropdown item
+        const activeSort = document.querySelector('#sort-selector .dropdown-item.active');
+        const currentSortBy = activeSort ? activeSort.getAttribute('data-value') : 'cpu';
         sortProcesses(currentSortBy);
     }
 
@@ -306,8 +541,8 @@ document.addEventListener("DOMContentLoaded", function () {
     function sortProcesses(sortBy) {
         const processesList = document.getElementById("processes-list");
         
-        // Sort the processes based on the selected metric
-        let sortedProcesses = [...processes];
+        // Use the cached processes data
+        let sortedProcesses = [...dataCache.processes];
         
         switch(sortBy) {
             case 'cpu':
@@ -324,9 +559,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 break;
         }
         
-        // Take only top 5 processes
-        sortedProcesses = sortedProcesses.slice(0, 5);
-        
         // Clear the current list
         processesList.innerHTML = '';
         
@@ -336,7 +568,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
         
-        // Add the sorted processes to the list
+        // Display the processes (already limited to 3 by the API call with limit=3)
         sortedProcesses.forEach(process => {
             const row = document.createElement('tr');
             
@@ -370,19 +602,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return (total / 1024).toFixed(2) + ' MB/s';
         }
         return total.toFixed(2) + ' KB/s';
-    }
-
-    // Function to generate sample process data for demonstration
-    function getSampleProcesses() {
-        return [
-            { name: 'chrome.exe', pid: 1234, cpu_percent: 12.3, memory_mb: 256, network_upload: 125, network_download: 345, iops: 23 },
-            { name: 'firefox.exe', pid: 2345, cpu_percent: 8.7, memory_mb: 178, network_upload: 85, network_download: 210, iops: 18 },
-            { name: 'code.exe', pid: 3456, cpu_percent: 5.2, memory_mb: 135, network_upload: 12, network_download: 34, iops: 8 },
-            { name: 'node.exe', pid: 4567, cpu_percent: 3.8, memory_mb: 76, network_upload: 35, network_download: 15, iops: 12 },
-            { name: 'spotify.exe', pid: 5678, cpu_percent: 2.4, memory_mb: 180, network_upload: 220, network_download: 180, iops: 5 },
-            { name: 'discord.exe', pid: 6789, cpu_percent: 1.9, memory_mb: 145, network_upload: 45, network_download: 65, iops: 4 },
-            { name: 'explorer.exe', pid: 7890, cpu_percent: 1.2, memory_mb: 85, network_upload: 5, network_download: 12, iops: 15 }
-        ];
     }
 
     // Function to update per-CPU display
@@ -446,17 +665,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Initialize data
-    fetchData();
-    
-    // Setup data fetch interval
-    dataFetchInterval = setInterval(fetchData, 3000);
+    // Format byte rate to appropriate units
+    function formatByteRate(bytes) {
+        if (bytes === 0) return '0 B/s';
+        const units = ['B/s', 'KB/s', 'MB/s', 'GB/s', 'TB/s'];
+        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + units[i];
+    }
 
-    // Set up process sort control
-    const sortProcessesSelect = document.getElementById("sort-processes");
-    sortProcessesSelect.addEventListener("change", function() {
-        sortProcesses(this.value);
-    });
+    // Initialize data
+    fetchAllData();
+    
+    // Setup data fetch interval with the default refresh rate
+    dataFetchInterval = setInterval(fetchAllData, refreshRate);
 
     // Add CSS for rotating animation
     const style = document.createElement('style');

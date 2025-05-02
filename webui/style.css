@@ -4,13 +4,13 @@
     --card-bg: #1e1e1e;
     --primary-color: #2196f3;
     --secondary-color: #64b5f6;
-    --accent-color: #ff9800;
+    --accent-color: #2196f3;
     --danger-color: #f44336;
     --purple-color: #9c27b0;
     --border-color: rgba(255, 255, 255, 0.1);
     --chart-bg: #252525;
     --success-color: #4caf50;
-    --warning-color: #ff9800;
+    --warning-color: #2196f3;
     --hover-color: rgba(255, 255, 255, 0.05);
     --navbar-blur: rgba(18, 18, 18, 0.7);
     --shadow-color: rgba(0, 0, 0, 0.2);
@@ -22,13 +22,13 @@
     --card-bg: #ffffff;
     --primary-color: #1976d2;
     --secondary-color: #2196f3;
-    --accent-color: #fd7e14;
+    --accent-color: #1976d2;
     --danger-color: #dc3545;
     --purple-color: #6f42c1;
     --border-color: rgba(0, 0, 0, 0.1);
     --chart-bg: #f5f5f5;
     --success-color: #28a745;
-    --warning-color: #ffc107;
+    --warning-color: #1976d2;
     --hover-color: rgba(0, 0, 0, 0.03);
     --navbar-blur: rgba(247, 249, 252, 0.85);
     --shadow-color: rgba(0, 0, 0, 0.1);
@@ -61,17 +61,6 @@ body {
     width: 100%;
     max-width: 100%;
     overflow-x: hidden;
-}
-
-/* Hide scrollbar for Chrome, Safari and Opera */
-::-webkit-scrollbar {
-    display: none;
-}
-
-/* Hide scrollbar for IE, Edge and Firefox */
-body {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
 }
 
 /* Navbar Styles */
@@ -117,14 +106,14 @@ body {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
 }
 
 #theme-toggle, #data-toggle {
     display: flex;
     align-items: center;
     padding: 8px 15px;
-    background-color: transparent;
+    background-color: var(--card-bg);
     border: 1px solid var(--border-color);
     color: var(--text-color);
     border-radius: 20px;
@@ -133,11 +122,19 @@ body {
 }
 
 #theme-toggle:hover, #data-toggle:hover {
-    background-color: var(--hover-color);
+    border-color: var(--primary-color);
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.1);
 }
 
 #theme-toggle i, #data-toggle i {
     margin-right: 8px;
+    color: var(--primary-color);
+}
+
+/* Add the same active state for these buttons as the dropdowns have */
+#theme-toggle:active, #data-toggle:active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
 }
 
 /* Pulse effect for data toggle button */
@@ -164,13 +161,13 @@ body {
 
 @keyframes pulse {
     0% {
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+        box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4);
     }
     70% {
-        box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
+        box-shadow: 0 0 0 10px rgba(33, 150, 243, 0);
     }
     100% {
-        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+        box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
     }
 }
 
@@ -200,7 +197,7 @@ body {
     padding: 20px;
     display: flex;
     box-shadow: 0 5px 15px var(--shadow-color);
-    transition: transform 0.3s;
+    transition: all 0.3s;
     height: 100%;
     min-height: 150px;
     margin: 0 auto;
@@ -209,7 +206,7 @@ body {
 }
 
 .metric-card:hover {
-    transform: translateY(-5px);
+    box-shadow: 0 8px 20px var(--shadow-color);
 }
 
 .metric-icon {
@@ -234,7 +231,7 @@ body {
 }
 
 .disk-icon {
-    background-color: var(--warning-color);
+    background-color: var(--primary-color);
 }
 
 .uptime-icon {
@@ -242,7 +239,7 @@ body {
 }
 
 .network-icon {
-    background-color: var(--accent-color);
+    background-color: var(--primary-color);
 }
 
 .metric-data {
@@ -422,6 +419,23 @@ canvas {
         margin-top: 10px;
         width: 100%;
         justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    .refresh-rate-container {
+        margin: 8px 5px;
+        padding: 6px 10px;
+    }
+    .refresh-rate-container span {
+        display: none; /* Hide the "Refresh:" text on mobile */
+    }
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .sort-controls {
+        width: 100%;
+        justify-content: space-between;
     }
     .main-content {
         padding: 15px;
@@ -500,14 +514,15 @@ canvas {
     }
 }
 
-/* Animation for refresh button */
+/* Animation for refresh icon */
 @keyframes rotating {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
 
 .rotating {
-    animation: rotating 1s linear;
+    animation: rotating 1s ease-in-out;
+    color: var(--primary-color) !important;
 }
 
 /* Top Processes Section */
@@ -537,21 +552,43 @@ canvas {
     display: flex;
     align-items: center;
     gap: 10px;
+    background-color: var(--card-bg);
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s;
+}
+
+.sort-controls:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.3);
+}
+
+.sort-controls i {
+    color: var(--primary-color);
+    margin-right: 5px;
 }
 
 .sort-controls span {
     font-size: 0.9rem;
-    color: var(--secondary-color);
+    color: var(--text-color);
+    font-weight: 500;
 }
 
-.sort-controls select {
-    padding: 5px 10px;
+#sort-processes {
+    padding: 5px 12px;
     border-radius: 5px;
     border: 1px solid var(--border-color);
     background-color: var(--bg-color);
     color: var(--text-color);
     font-size: 0.9rem;
     cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+}
+
+#sort-processes:hover, #sort-processes:focus {
+    border-color: var(--primary-color);
     outline: none;
 }
 
@@ -593,7 +630,7 @@ canvas {
 
 /* Add styles for disk I/O icon */
 .io-icon {
-    background-color: var(--accent-color);
+    background-color: var(--primary-color);
 }
 
 /* Responsive adjustments for processes table */
@@ -672,7 +709,6 @@ canvas {
     background-image: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
     border-radius: 5px;
     width: 0;
-    transition: width 0.5s ease-out;
 }
 
 .per-cpu-value {
@@ -687,4 +723,328 @@ canvas {
     .per-cpu-container {
         margin-top: 15px;
     }
+}
+
+/* Improved styles for the refresh rate selector */
+.refresh-rate-container {
+    display: flex;
+    align-items: center;
+    margin: 0 15px;
+    color: var(--text-color);
+    background-color: var(--card-bg);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s;
+}
+
+.refresh-rate-container:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 8px rgba(33, 150, 243, 0.3);
+}
+
+.refresh-rate-container i {
+    margin-right: 8px;
+    color: var(--primary-color);
+}
+
+.refresh-rate-container span {
+    margin-right: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+#refresh-rate {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+}
+
+#refresh-rate:hover, #refresh-rate:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+/* Style for refresh tooltip */
+.refresh-tooltip {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    font-weight: 500;
+    animation: fadeInOut 2s ease-in-out;
+    border-left: 3px solid var(--primary-color);
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Custom Dropdown Styles */
+.custom-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background-color: var(--bg-color);
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    z-index: 1000;
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95);
+    transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.custom-dropdown.active {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
+.dropdown-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    border-left: 4px solid transparent;
+}
+
+.dropdown-item:hover {
+    background-color: var(--hover-color);
+    color: var(--primary-color);
+    border-left: 4px solid var(--primary-color);
+    padding-left: 16px;
+}
+
+.dropdown-item.active {
+    background-color: rgba(33, 150, 243, 0.1);
+    color: var(--primary-color);
+    font-weight: 600;
+    border-left: 4px solid var(--primary-color);
+}
+
+.dropdown-item::before {
+    display: none;
+}
+
+/* Position the dropdowns correctly */
+.refresh-rate-container, .sort-controls {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid var(--border-color);
+}
+
+.refresh-rate-container:hover, .sort-controls:hover {
+    box-shadow: 0 5px 15px rgba(33, 150, 243, 0.1);
+}
+
+.refresh-rate-container.active, .sort-controls.active {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+}
+
+.refresh-rate-container .selected-value, 
+.sort-controls .selected-value {
+    font-weight: 500;
+    margin: 0 5px;
+    color: var(--primary-color);
+}
+
+.refresh-rate-container .fa-chevron-down,
+.sort-controls .fa-chevron-down {
+    font-size: 0.8rem;
+    margin-left: 5px;
+    transition: transform 0.3s;
+}
+
+.refresh-rate-container.active .fa-chevron-down,
+.sort-controls.active .fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+/* Ripple effect for dropdown items */
+.dropdown-item .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Improve mobile experience without transform effects */
+@media (max-width: 768px) {
+    .custom-dropdown {
+        position: fixed;
+        top: auto;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) scale(0.95);
+        width: 90%;
+        max-width: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .custom-dropdown.active {
+        transform: translateX(-50%) scale(1);
+    }
+    
+    .dropdown-item {
+        padding: 15px 20px;
+        font-size: 1.1rem;
+    }
+}
+
+/* Styles for last update time indicator */
+.last-update-time {
+    font-size: 0.8rem;
+    color: var(--secondary-color);
+    text-align: right;
+    padding: 5px 10px;
+    font-style: italic;
+    margin-top: 5px;
+}
+
+/* Add loading indicator animation */
+@keyframes pulse-opacity {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+.empty-message {
+    animation: pulse-opacity 1.5s infinite;
+}
+
+.processes-status {
+    padding: 0 20px;
+    font-size: 0.9rem;
+    color: var(--secondary-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#processes-update-status {
+    font-style: italic;
+}
+
+#processes-update-status.loading {
+    animation: pulse-opacity 1.5s infinite;
+}
+
+#processes-update-status.error {
+    color: var(--danger-color);
+}
+
+/* Custom Scrollbar for Desktop */
+@media (min-width: 769px) {
+    /* Remove the previous conflicting styles */
+    body {
+        -ms-overflow-style: auto;
+        scrollbar-width: thin;
+        /* Remove duplicate overflow-y property that causes extra scrollbar */
+        overflow-y: auto;
+    }
+    
+    /* Ensure main content scrolls properly without extra scrollbars */
+    .main-content {
+        overflow: auto;
+    }
+    
+    ::-webkit-scrollbar {
+        display: block;
+        width: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--bg-color);
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(to bottom, var(--primary-color), var(--secondary-color));
+        border-radius: 10px;
+        border: 2px solid var(--bg-color);
+        box-shadow: inset 0 0 6px rgba(33, 150, 243, 0.3);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(to bottom, var(--secondary-color), var(--primary-color));
+        box-shadow: inset 0 0 8px rgba(33, 150, 243, 0.5);
+    }
+
+    /* Enhance the scrollbar corner */
+    ::-webkit-scrollbar-corner {
+        background-color: var(--bg-color);
+    }
+
+    /* For Firefox */
+    * {
+        scrollbar-color: var(--primary-color) var(--bg-color);
+    }
+}
+
+.status-bar {
+    width: 100%;
+    padding: 12px 0;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 500;
+    background: var(--danger-color);
+    color: #fff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2000;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px var(--shadow-color);
+    opacity: 0.95;
+}
+.status-bar.loading {
+    background: var(--primary-color);
+    color: #fff;
+}
+.status-bar.offline {
+    background: #ff9800;
+    color: #fff;
+}
+.status-bar.success {
+    background: var(--success-color);
+    color: #fff;
+}
+.status-bar[aria-live="polite"] {
+    outline: none;
+}
+
+/* بهبود کنتراست رنگ‌ها برای حالت دارک و لایت */
+body, .dashboard, .navbar, .main-content, .metric-card, .detail-card, .processes-table, .custom-dropdown, .status-bar {
+    outline: none;
 }

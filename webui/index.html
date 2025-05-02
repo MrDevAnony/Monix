@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
+    <div id="global-status-bar" class="status-bar" aria-live="polite" style="display:none"></div>
     <div class="dashboard">
         <nav class="navbar">
             <div class="header-title">
@@ -24,6 +25,18 @@
                     <i class="fas fa-pause"></i>
                     <span>Pause Updates</span>
                 </button>
+                <div class="refresh-rate-container" id="refresh-selector">
+                    <i class="fas fa-sync-alt"></i>
+                    <span>Refresh:</span>
+                    <span class="selected-value">5s</span>
+                    <i class="fas fa-chevron-down"></i>
+                    <div class="custom-dropdown refresh-dropdown">
+                        <div class="dropdown-item" data-value="5">5s</div>
+                        <div class="dropdown-item" data-value="15">15s</div>
+                        <div class="dropdown-item" data-value="30">30s</div>
+                        <div class="dropdown-item" data-value="60">1min</div>
+                    </div>
+                </div>
                 <span class="date-time" id="current-time">--:--:--</span>
             </div>
         </nav>
@@ -179,15 +192,18 @@
 
             <div class="top-processes-section">
                 <div class="section-header">
-                    <h2>Top Single Processes</h2>
-                    <div class="sort-controls">
+                    <h2>Top 3 Processes</h2>
+                    <div class="sort-controls" id="sort-selector">
+                        <i class="fas fa-sort"></i>
                         <span>Sort by:</span>
-                        <select id="sort-processes">
-                            <option value="cpu" selected>CPU Usage</option>
-                            <option value="ram">RAM Usage</option>
-                            <option value="network">Network Usage</option>
-                            <option value="iops">Disk IOPS</option>
-                        </select>
+                        <span class="selected-value">CPU Usage</span>
+                        <i class="fas fa-chevron-down"></i>
+                        <div class="custom-dropdown sort-dropdown">
+                            <div class="dropdown-item" data-value="cpu">CPU Usage</div>
+                            <div class="dropdown-item" data-value="ram">RAM Usage</div>
+                            <div class="dropdown-item" data-value="network">Network Usage</div>
+                            <div class="dropdown-item" data-value="iops">Disk IOPS</div>
+                        </div>
                     </div>
                 </div>
                 <div class="processes-table-container">

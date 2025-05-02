@@ -43,6 +43,9 @@ function createCpuChart(colors, textColor) {
     gradientFill.addColorStop(0, hexToRGBA(colors.cpu, 0.5));
     gradientFill.addColorStop(1, hexToRGBA(colors.cpu, 0.05));
     
+    // Set point border color based on theme
+    const pointBorderColor = isLightMode ? "#000000" : "#ffffff";
+    
     cpuChart = new Chart(ctx, {
         type: "line",
         data: {
@@ -147,7 +150,8 @@ function createCpuChart(colors, textColor) {
                 point: {
                     radius: 3,
                     hoverRadius: 6,
-                    borderWidth: 2
+                    borderWidth: 2,
+                    borderColor: pointBorderColor
                 }
             }
         }
@@ -167,6 +171,9 @@ function createNetworkChart(colors, textColor) {
     downloadGradient.addColorStop(0, hexToRGBA(colors.download, 0.5));
     downloadGradient.addColorStop(1, hexToRGBA(colors.download, 0.05));
     
+    // Set point border color based on theme
+    const pointBorderColor = isLightMode ? "#000000" : "#ffffff";
+    
     networkChart = new Chart(ctx, {
         type: "line",
         data: {
@@ -179,7 +186,7 @@ function createNetworkChart(colors, textColor) {
                     backgroundColor: uploadGradient,
                     borderWidth: 2,
                     pointBackgroundColor: colors.upload,
-                    pointBorderColor: "#fff",
+                    pointBorderColor: pointBorderColor,
                     pointRadius: 3,
                     pointHoverRadius: 6,
                     fill: true,
@@ -192,7 +199,7 @@ function createNetworkChart(colors, textColor) {
                     backgroundColor: downloadGradient,
                     borderWidth: 2,
                     pointBackgroundColor: colors.download,
-                    pointBorderColor: "#fff",
+                    pointBorderColor: pointBorderColor,
                     pointRadius: 3,
                     pointHoverRadius: 6,
                     fill: true,
@@ -306,69 +313,105 @@ function createNetworkChart(colors, textColor) {
 
 // Update CPU chart function
 function updateCpuChart(timestamps, avgCpuData, perCpuData) {
+    // Ensure chart exists
     if (!cpuChart) return;
     
-    // Update timestamps
-    cpuChart.data.labels = timestamps;
+    // Check if we should update per-CPU data
+    const usePerCpuData = perCpuData && perCpuData.length > 0 && perCpuData[0].length > 0;
     
-    // If perCpuData is provided and has data
-    if (perCpuData && perCpuData.length > 0) {
-        // Check if we need to create datasets for per-CPU data
-        if (cpuChart.data.datasets.length !== perCpuData[0].length) {
-            // Generate colors for each CPU thread
-            const cpuColors = generateCpuColors(perCpuData[0].length);
+    // Get current theme
+    const isLightMode = document.body.classList.contains('light-mode');
+    const pointBorderColor = isLightMode ? "#000000" : "#ffffff";
+    
+    // Update labels
+    cpuChart.data.labels = timestamps.slice(-MAX_DATA_POINTS);
+    
+    // --- حفظ وضعیت visibility هسته‌ها ---
+    let prevVisibility = {};
+    if (usePerCpuData && cpuChart.data.datasets.length > 1) {
+        for (let i = 1; i < cpuChart.data.datasets.length; i++) {
+            const ds = cpuChart.data.datasets[i];
+            prevVisibility[ds.label] = ds.hidden === true;
+        }
+    }
+    // --- پایان حفظ وضعیت ---
+
+    // Handle different dataset counts
+    if (usePerCpuData) {
+        // If we have per-CPU data, use a dataset for each CPU
+        const cpuCount = perCpuData[0].length;
+        
+        // Only regenerate datasets if the CPU count has changed
+        if (cpuChart.data.datasets.length !== cpuCount + 1) {
+            const cpuColors = generateCpuColors(cpuCount);
             
-            // Clear existing datasets
-            cpuChart.data.datasets = [];
+            // Create a dataset for each CPU
+            cpuChart.data.datasets = Array.from({ length: cpuCount }, (_, i) => ({
+                label: `CPU ${i}`,
+                data: [],
+                borderColor: cpuColors[i],
+                backgroundColor: hexToRGBA(cpuColors[i], 0.05),
+                borderWidth: 2,
+                pointBackgroundColor: cpuColors[i],
+                pointBorderColor: pointBorderColor,
+                pointRadius: 2,
+                pointHoverRadius: 5,
+                hidden: false, // Show all CPUs by default
+                fill: false
+            }));
             
-            // Create a dataset for each CPU thread
-            for (let i = 0; i < perCpuData[0].length; i++) {
-                cpuChart.data.datasets.push({
-                    label: `CPU ${i}`,
-                    data: [],
-                    borderColor: cpuColors[i],
-                    backgroundColor: hexToRGBA(cpuColors[i], 0.05),
-                    borderWidth: 2,
-                    pointBackgroundColor: cpuColors[i],
-                    pointBorderColor: "#fff",
-                    pointRadius: 2,
-                    pointHoverRadius: 5,
-                    fill: false,
-                    tension: 0.4
-                });
+            // Add total CPU usage dataset (always visible)
+            cpuChart.data.datasets.unshift({
+                label: 'Total CPU',
+                data: [],
+                borderColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+                backgroundColor: hexToRGBA(getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(), 0.2),
+                borderWidth: 3,
+                pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+                pointBorderColor: pointBorderColor,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4
+            });
+        }
+        
+        // Update total CPU dataset
+        cpuChart.data.datasets[0].data = avgCpuData.slice(-MAX_DATA_POINTS);
+        
+        // Update per-CPU datasets
+        for (let i = 0; i < cpuCount; i++) {
+            const cpuData = perCpuData.map(dataPoint => dataPoint[i]);
+            cpuChart.data.datasets[i+1].data = cpuData.slice(-MAX_DATA_POINTS);
+            // --- بازگردانی وضعیت hidden ---
+            const label = `CPU ${i}`;
+            if (prevVisibility[label] !== undefined) {
+                cpuChart.data.datasets[i+1].hidden = prevVisibility[label];
             }
+            // --- پایان بازگردانی ---
+        }
+    } else {
+        // Simple case: just use average CPU usage
+        if (cpuChart.data.datasets.length !== 1) {
+            cpuChart.data.datasets = [{
+                label: 'CPU Usage',
+                data: [],
+                borderColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+                backgroundColor: hexToRGBA(getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(), 0.2),
+                borderWidth: 3,
+                pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+                pointBorderColor: pointBorderColor,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                fill: true,
+                tension: 0.4
+            }];
         }
         
-        // Update data for each CPU thread
-        for (let i = 0; i < cpuChart.data.datasets.length; i++) {
-            // Extract data for this CPU thread from all data points
-            cpuChart.data.datasets[i].data = perCpuData.map(dataPoint => dataPoint[i]);
-        }
-    } else if (avgCpuData && (cpuChart.data.datasets.length === 0 || cpuChart.data.datasets[0].label === "Average CPU Usage (%)")) {
-        // Get context to create gradient
-        const ctx = document.getElementById("cpuChart").getContext("2d");
-        const cpuColor = getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim();
-        
-        // Create gradient
-        const gradientFill = ctx.createLinearGradient(0, 0, 0, 400);
-        gradientFill.addColorStop(0, hexToRGBA(cpuColor, 0.5));
-        gradientFill.addColorStop(1, hexToRGBA(cpuColor, 0.05));
-        
-        cpuChart.data.datasets = [{
-            label: "CPU Usage (%)",
-            data: avgCpuData,
-            borderColor: cpuColor,
-            backgroundColor: gradientFill,
-            borderWidth: 2.5,
-            pointBackgroundColor: cpuColor,
-            pointBorderColor: "#fff",
-            pointRadius: 3,
-            pointHoverRadius: 6,
-            fill: true,
-            tension: 0.4
-        }];
+        cpuChart.data.datasets[0].data = avgCpuData.slice(-MAX_DATA_POINTS);
     }
     
+    // Update the chart
     cpuChart.update();
 }
 
@@ -413,11 +456,12 @@ function updateNetworkChart(timestamps, uploadData, downloadData) {
 
 // Watch for theme changes and update chart colors
 function watchThemeChanges() {
+    // Add a MutationObserver to detect when the light-mode class is added or removed
     const observer = new MutationObserver(function(mutations) {
         mutations.forEach(function(mutation) {
-            if (mutation.attributeName === "class") {
-                // Get updated colors
-                const chartColors = {
+            if (mutation.attributeName === 'class') {
+                // Get fresh colors based on new theme
+                const colors = {
                     cpu: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
                     upload: getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim(),
                     download: getComputedStyle(document.documentElement).getPropertyValue('--danger-color').trim(),
@@ -425,74 +469,60 @@ function watchThemeChanges() {
                     borderColor: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
                 };
                 
+                // Check if light mode is active
                 const isLightMode = document.body.classList.contains('light-mode');
                 
-                // Set text color to black when in light mode
-                const textColor = isLightMode ? '#000000' : chartColors.textColor;
+                // Set theme-specific colors
+                const textColor = isLightMode ? '#000000' : colors.textColor;
+                const pointBorderColor = isLightMode ? '#000000' : '#ffffff';
                 
-                // Update global defaults
+                // Update Chart.js global defaults
                 Chart.defaults.color = textColor;
-                Chart.defaults.borderColor = chartColors.borderColor;
+                Chart.defaults.borderColor = colors.borderColor;
                 
-                // Update specific chart colors
+                // Update CPU chart
                 if (cpuChart) {
-                    // Update all CPU datasets
-                    for (let i = 0; i < cpuChart.data.datasets.length; i++) {
-                        const dataset = cpuChart.data.datasets[i];
-                        
-                        // First dataset or if there's only one, use primary color
-                        // Otherwise, regenerate colors
-                        if (i === 0 && cpuChart.data.datasets.length === 1) {
-                            dataset.borderColor = chartColors.cpu;
-                            dataset.backgroundColor = hexToRGBA(chartColors.cpu, 0.1);
-                            dataset.pointBackgroundColor = chartColors.cpu;
-                        } else if (cpuChart.data.datasets.length > 1) {
-                            // Use new colors based on current theme
-                            const cpuColors = generateCpuColors(cpuChart.data.datasets.length);
-                            dataset.borderColor = cpuColors[i];
-                            dataset.backgroundColor = hexToRGBA(cpuColors[i], 0.05);
-                            dataset.pointBackgroundColor = cpuColors[i];
-                        }
-                    }
-                    
-                    // Update scales and legend colors to black in light mode
+                    // Update colors
                     cpuChart.options.scales.y.ticks.color = textColor;
                     cpuChart.options.scales.x.ticks.color = textColor;
-                    cpuChart.options.scales.y.grid.color = chartColors.borderColor;
                     cpuChart.options.plugins.legend.labels.color = textColor;
                     
-                    // Update tooltip colors
-                    cpuChart.options.plugins.tooltip.backgroundColor = isLightMode ? 
-                        'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)';
+                    // Update point border colors for all datasets
+                    cpuChart.options.elements.point.borderColor = pointBorderColor;
+                    cpuChart.data.datasets.forEach(dataset => {
+                        dataset.pointBorderColor = pointBorderColor;
+                    });
                     
+                    // Update background color
+                    cpuChart.options.plugins.tooltip.backgroundColor = isLightMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)';
+                    
+                    // Update the chart
                     cpuChart.update();
                 }
                 
+                // Update Network chart
                 if (networkChart) {
-                    networkChart.data.datasets[0].borderColor = chartColors.upload;
-                    networkChart.data.datasets[0].backgroundColor = hexToRGBA(chartColors.upload, 0.1);
-                    networkChart.data.datasets[0].pointBackgroundColor = chartColors.upload;
-                    
-                    networkChart.data.datasets[1].borderColor = chartColors.download;
-                    networkChart.data.datasets[1].backgroundColor = hexToRGBA(chartColors.download, 0.1);
-                    networkChart.data.datasets[1].pointBackgroundColor = chartColors.download;
-                    
-                    // Update scales and legend colors to black in light mode
+                    // Update colors
                     networkChart.options.scales.y.ticks.color = textColor;
                     networkChart.options.scales.x.ticks.color = textColor;
-                    networkChart.options.scales.y.grid.color = chartColors.borderColor;
                     networkChart.options.plugins.legend.labels.color = textColor;
                     
-                    // Update tooltip colors
-                    networkChart.options.plugins.tooltip.backgroundColor = isLightMode ? 
-                        'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)';
+                    // Update point border colors for all datasets
+                    networkChart.data.datasets.forEach(dataset => {
+                        dataset.pointBorderColor = pointBorderColor;
+                    });
                     
+                    // Update background color
+                    networkChart.options.plugins.tooltip.backgroundColor = isLightMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0, 0, 0, 0.7)';
+                    
+                    // Update the chart
                     networkChart.update();
                 }
             }
         });
     });
     
+    // Start observing the body element for class changes
     observer.observe(document.body, { attributes: true });
 }
 
