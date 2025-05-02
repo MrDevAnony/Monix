@@ -49,6 +49,7 @@ Just press Enter to use the defaults or input your preferred values.
 ## Accessing the Monitor
 
 - **API**: `http://<host>:<port>/api`
+- **API DOC**: `http://<host>:<port>/docs`
 - **Web UI**: `http://<host>:<port>/ui`
 
 ## API Endpoints
