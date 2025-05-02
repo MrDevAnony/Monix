@@ -11,6 +11,13 @@ A beautiful and efficient system monitoring tool with both backend API and front
 - Web-based user interface
 - RESTful API for integration with other tools
 
+## Requirements
+
+- Python 3.7+
+- FastAPI - python library
+- Uvicorn - python library
+- psutil - python library
+- rich - python library
 ## Installation
 
 1. Clone this repository:
@@ -42,7 +49,7 @@ Just press Enter to use the defaults or input your preferred values.
 ## Accessing the Monitor
 
 - **API**: `http://<host>:<port>/api`
-- **Web UI**: `http://<host>:<port>/ui` (if frontend is available)
+- **Web UI**: `http://<host>:<port>/ui`
 
 ## API Endpoints
 
@@ -56,23 +63,3 @@ Just press Enter to use the defaults or input your preferred values.
 - `/api/uptime` - System uptime information
 - `/api/iops` - Disk I/O operations per second
 - `/api/processes` - Running processes with resource usage
-
-## Frontend
-
-The server will automatically look for frontend files in the following locations:
-- `./frontend/dist`
-- `./frontend/build`
-- `./dist`
-- `./build`
-- `../frontend/dist`
-- `../frontend/build`
-
-If a frontend is found, it will be served at the `/ui` endpoint.
-
-## Requirements
-
-- Python 3.7+
-- FastAPI
-- Uvicorn
-- psutil
-- rich (for console output)
