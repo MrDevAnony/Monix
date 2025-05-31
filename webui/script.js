@@ -215,8 +215,7 @@ document.addEventListener("DOMContentLoaded", function () {
         cpu: [],
         upload: [],
         download: [],
-        timestamps: [],
-        perCpuData: []
+        timestamps: []
     };
 
     // Cache for data
@@ -320,12 +319,6 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("cpu-freq").textContent = formatCpuFreq(cpuData.cpu_freq);
             document.getElementById("cpu-cores").textContent = cpuData.cpu_cores;
             document.getElementById("cpu-threads").textContent = cpuData.cpu_threads;
-            
-            // Display per-CPU core data
-            const perCpuData = cpuData.cpu_percent_per_cpu;
-            if (perCpuData && perCpuData.length > 0) {
-                updatePerCpuDisplay(perCpuData);
-            }
             
             // Update RAM data
             document.getElementById("ram-usage").textContent = memoryData.memory_percent.toFixed(1);
@@ -478,7 +471,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function updateCharts() {
         // Call chart update functions defined in chart.js
         if (typeof updateCpuChart === 'function') {
-            updateCpuChart(historyData.timestamps, historyData.cpu, historyData.perCpuData);
+            updateCpuChart(historyData.timestamps, historyData.cpu);
         }
         
         if (typeof updateNetworkChart === 'function') {
@@ -602,67 +595,6 @@ document.addEventListener("DOMContentLoaded", function () {
             return (total / 1024).toFixed(2) + ' MB/s';
         }
         return total.toFixed(2) + ' KB/s';
-    }
-
-    // Function to update per-CPU display
-    function updatePerCpuDisplay(perCpuData) {
-        const container = document.getElementById('per-cpu-container');
-        if (container) {
-            container.innerHTML = ''; // Clear existing content
-            
-            // Display bars for each CPU thread
-            perCpuData.forEach((cpuPercent, index) => {
-                const cpuItem = document.createElement('div');
-                cpuItem.className = 'per-cpu-item';
-                
-                // CPU thread label
-                const cpuLabel = document.createElement('div');
-                cpuLabel.className = 'per-cpu-label';
-                cpuLabel.textContent = `CPU ${index}`;
-                
-                // Bar container
-                const barContainer = document.createElement('div');
-                barContainer.className = 'per-cpu-bar-container';
-                
-                // Bar representing CPU usage
-                const bar = document.createElement('div');
-                bar.className = 'per-cpu-bar';
-                bar.style.width = `${cpuPercent}%`;
-                
-                // Value display
-                const valueDisplay = document.createElement('div');
-                valueDisplay.className = 'per-cpu-value';
-                valueDisplay.textContent = `${cpuPercent.toFixed(1)}%`;
-                
-                // Assemble elements
-                barContainer.appendChild(bar);
-                cpuItem.appendChild(cpuLabel);
-                cpuItem.appendChild(barContainer);
-                cpuItem.appendChild(valueDisplay);
-                
-                container.appendChild(cpuItem);
-            });
-        }
-        
-        // Store per-CPU data for charts
-        if (!historyData.perCpuData) {
-            historyData.perCpuData = [];
-        }
-        
-        // Add this data point
-        historyData.perCpuData.push(perCpuData);
-        
-        // Limit history length to match other data
-        const MAX_HISTORY = 30;
-        if (historyData.perCpuData.length > MAX_HISTORY) {
-            historyData.perCpuData.shift();
-        }
-        
-        // Calculate and update the average CPU usage for the charts
-        if (perCpuData.length > 0) {
-            const avgCpuUsage = perCpuData.reduce((sum, value) => sum + value, 0) / perCpuData.length;
-            historyData.cpu[historyData.cpu.length - 1] = avgCpuUsage;
-        }
     }
 
     // Format byte rate to appropriate units

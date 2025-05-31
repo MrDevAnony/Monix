@@ -312,105 +312,31 @@ function createNetworkChart(colors, textColor) {
 }
 
 // Update CPU chart function
-function updateCpuChart(timestamps, avgCpuData, perCpuData) {
+function updateCpuChart(timestamps, avgCpuData) {
     // Ensure chart exists
     if (!cpuChart) return;
-    
-    // Check if we should update per-CPU data
-    const usePerCpuData = perCpuData && perCpuData.length > 0 && perCpuData[0].length > 0;
-    
     // Get current theme
     const isLightMode = document.body.classList.contains('light-mode');
     const pointBorderColor = isLightMode ? "#000000" : "#ffffff";
-    
     // Update labels
     cpuChart.data.labels = timestamps.slice(-MAX_DATA_POINTS);
-    
-    // --- حفظ وضعیت visibility هسته‌ها ---
-    let prevVisibility = {};
-    if (usePerCpuData && cpuChart.data.datasets.length > 1) {
-        for (let i = 1; i < cpuChart.data.datasets.length; i++) {
-            const ds = cpuChart.data.datasets[i];
-            prevVisibility[ds.label] = ds.hidden === true;
-        }
+    // فقط یک dataset برای total cpu usage
+    if (cpuChart.data.datasets.length !== 1) {
+        cpuChart.data.datasets = [{
+            label: 'CPU Usage',
+            data: [],
+            borderColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+            backgroundColor: hexToRGBA(getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(), 0.2),
+            borderWidth: 3,
+            pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+            pointBorderColor: pointBorderColor,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            fill: true,
+            tension: 0.4
+        }];
     }
-    // --- پایان حفظ وضعیت ---
-
-    // Handle different dataset counts
-    if (usePerCpuData) {
-        // If we have per-CPU data, use a dataset for each CPU
-        const cpuCount = perCpuData[0].length;
-        
-        // Only regenerate datasets if the CPU count has changed
-        if (cpuChart.data.datasets.length !== cpuCount + 1) {
-            const cpuColors = generateCpuColors(cpuCount);
-            
-            // Create a dataset for each CPU
-            cpuChart.data.datasets = Array.from({ length: cpuCount }, (_, i) => ({
-                label: `CPU ${i}`,
-                data: [],
-                borderColor: cpuColors[i],
-                backgroundColor: hexToRGBA(cpuColors[i], 0.05),
-                borderWidth: 2,
-                pointBackgroundColor: cpuColors[i],
-                pointBorderColor: pointBorderColor,
-                pointRadius: 2,
-                pointHoverRadius: 5,
-                hidden: false, // Show all CPUs by default
-                fill: false
-            }));
-            
-            // Add total CPU usage dataset (always visible)
-            cpuChart.data.datasets.unshift({
-                label: 'Total CPU',
-                data: [],
-                borderColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
-                backgroundColor: hexToRGBA(getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(), 0.2),
-                borderWidth: 3,
-                pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
-                pointBorderColor: pointBorderColor,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                fill: true,
-                tension: 0.4
-            });
-        }
-        
-        // Update total CPU dataset
-        cpuChart.data.datasets[0].data = avgCpuData.slice(-MAX_DATA_POINTS);
-        
-        // Update per-CPU datasets
-        for (let i = 0; i < cpuCount; i++) {
-            const cpuData = perCpuData.map(dataPoint => dataPoint[i]);
-            cpuChart.data.datasets[i+1].data = cpuData.slice(-MAX_DATA_POINTS);
-            // --- بازگردانی وضعیت hidden ---
-            const label = `CPU ${i}`;
-            if (prevVisibility[label] !== undefined) {
-                cpuChart.data.datasets[i+1].hidden = prevVisibility[label];
-            }
-            // --- پایان بازگردانی ---
-        }
-    } else {
-        // Simple case: just use average CPU usage
-        if (cpuChart.data.datasets.length !== 1) {
-            cpuChart.data.datasets = [{
-                label: 'CPU Usage',
-                data: [],
-                borderColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
-                backgroundColor: hexToRGBA(getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(), 0.2),
-                borderWidth: 3,
-                pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
-                pointBorderColor: pointBorderColor,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                fill: true,
-                tension: 0.4
-            }];
-        }
-        
-        cpuChart.data.datasets[0].data = avgCpuData.slice(-MAX_DATA_POINTS);
-    }
-    
+    cpuChart.data.datasets[0].data = avgCpuData.slice(-MAX_DATA_POINTS);
     // Update the chart
     cpuChart.update();
 }

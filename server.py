@@ -66,13 +66,11 @@ async def api_info():
 @app.get("/api/cpu")
 async def get_cpu_info():
     def cpu_data():
-        cpu_percent = psutil.cpu_percent(interval=0.5, percpu=False)
-        cpu_percent_per_cpu = psutil.cpu_percent(interval=0, percpu=True)
+        cpu_percent = psutil.cpu_percent(interval=0)
         cpu_freq = psutil.cpu_freq()
         cpu_freq_str = f"{cpu_freq.current:.2f} MHz" if cpu_freq else "N/A"
         return {
             "cpu_percent": cpu_percent,
-            "cpu_percent_per_cpu": cpu_percent_per_cpu,
             "cpu_freq": cpu_freq_str,
             "cpu_cores": psutil.cpu_count(logical=False),
             "cpu_threads": psutil.cpu_count(logical=True)
