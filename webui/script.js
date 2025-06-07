@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("current-time").textContent = now.toLocaleTimeString();
     }
     updateTime();
-    setInterval(updateTime, 1000);
+    setInterval(updateTime, 5000);
 
     // Data fetching toggle
     const dataToggle = document.getElementById("data-toggle");

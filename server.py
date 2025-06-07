@@ -373,7 +373,7 @@ def print_fancy_banner():
     title = Text("MONIX SYSTEM MONITOR", style="bold blue")
     subtitle = Text("Fast and beautiful system monitoring", style="italic cyan")
     panel_content = Text.assemble(title, "\n", subtitle)
-    panel = Panel(panel_content, border_style="green", width=60)
+    panel = Panel(panel_content, border_style="green", width=40)
     console.print(panel)
     console.print()
 
@@ -404,9 +404,10 @@ def main():
         console.print(f"[green]Frontend mounted at /ui[/green]")
     console.print(f"[bold green]Starting Monix server on {host}:{port}[/bold green]")
     console.print(f"[blue]API available at: [link=http://{host}:{port}/api]http://{host}:{port}/api[/link][/blue]")
+    console.print(f"[blue]FastAPI Docs available at: [link=http://{host}:{port}/docs]http://{host}:{port}/docs[/link][/blue]")
     if hasattr(app, "frontend_mounted"):
         console.print(f"[blue]UI available at: [link=http://{host}:{port}/ui]http://{host}:{port}/ui[/link][/blue]")
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 if __name__ == "__main__":
-    main() 
+    main()
