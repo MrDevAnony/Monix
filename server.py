@@ -13,12 +13,10 @@ from rich.text import Text
 from rich import prompt
 import threading
 
-# Set up colorful console output
 console = Console()
 
 app = FastAPI(title="Monix System Monitor")
 
-# CORS middleware to allow frontend to connect (only localhost for security)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://127.0.0.1", "http://localhost"],
@@ -27,7 +25,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Improved per-key cache with thread safety
 class PerKeyCache:
     def __init__(self, duration=1):
         self.duration = duration
@@ -46,7 +43,6 @@ class PerKeyCache:
 
 cache = PerKeyCache(duration=1)
 
-# State for network and IOPS
 state = {
     'network': {'last_bytes_sent': 0, 'last_bytes_recv': 0, 'last_time': 0},
     'iops': {'last_read_count': 0, 'last_write_count': 0, 'last_time': 0, 'last_read_iops': 0, 'last_write_iops': 0},
@@ -396,7 +392,7 @@ def get_user_input_for_server():
 def main():
     print_fancy_banner()
     host, port = get_user_input_for_server()
-    # حذف جستجوی دایرکتوری فرانت‌اند و فقط mount کردن webui
+   
     frontend_dir = Path(__file__).parent.absolute() / "webui"
     if frontend_dir.exists() and frontend_dir.is_dir():
         app.mount("/ui", StaticFiles(directory=str(frontend_dir), html=True), name="ui")
@@ -407,6 +403,7 @@ def main():
     console.print(f"[blue]FastAPI Docs available at: [link=http://{host}:{port}/docs]http://{host}:{port}/docs[/link][/blue]")
     if hasattr(app, "frontend_mounted"):
         console.print(f"[blue]UI available at: [link=http://{host}:{port}/ui]http://{host}:{port}/ui[/link][/blue]")
+        
     uvicorn.run(app, host=host, port=port, log_level="info")
 
 if __name__ == "__main__":
